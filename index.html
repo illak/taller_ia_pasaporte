@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pasaporte IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Caveat:wght@500;700&family=Courier+Prime:wght@700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Un solo mundo visual: un pasaporte. Tapa azul petróleo con dorado, hojas verde agua con guilloché, un color de tinta por estación. */
+  --cover: #123a4a;
+  --cover-deep: #0c2a36;
+  --gold: #d6b25e;
+  --paper: #edf3ef;
+  --paper-line: #d3e2db;
+  --ink: #1b2a31;
+  --muted: #56676d;
+  --st-videos: #1f5fa8;
+  --st-apps: #c26a10;
+  --st-prompts: #9c3fa8;
+  --bar: #1d5466;
+  --font-display: "Bricolage Grotesque", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-hand: "Caveat", "Comic Sans MS", cursive;
+  --font-mrz: "Courier Prime", "Courier New", monospace;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--cover-deep);
+  background-image: radial-gradient(circle at 20% 0%, #174b5e 0, transparent 55%);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.5;
+  min-height: 100%;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- navegación ---------- */
+.wrap { max-width: 1040px; margin: 0 auto; padding: 20px 16px 40px; }
+.tabs {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex: 0 0 auto;
+  border: 0; cursor: pointer;
+  background: #1c4e60; color: #cfe2e6;
+  padding: 8px 14px 10px; border-radius: 10px 10px 0 0;
+  font-size: 14px; font-weight: 700; letter-spacing: .02em;
+  display: flex; align-items: center; gap: 7px;
+}
+.tab .dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; opacity: .35; }
+.tab .dot.on { opacity: 1; }
+.tab[aria-current="page"] { background: var(--paper); color: var(--ink); }
+.tab[data-p="videos"] .dot { color: var(--st-videos); }
+.tab[data-p="apps"] .dot { color: var(--st-apps); }
+.tab[data-p="prompts"] .dot { color: var(--st-prompts); }
+
+.page {
+  display: none;
+  background-color: var(--paper);
+  background-image:
+    repeating-radial-gradient(circle at 110% -10%, transparent 0 13px, rgba(29,84,102,.06) 13px 14px),
+    repeating-radial-gradient(circle at -10% 110%, transparent 0 17px, rgba(29,84,102,.05) 17px 18px);
+  border-radius: 0 14px 14px 14px;
+  padding: clamp(20px, 4vw, 44px);
+  box-shadow: 0 18px 40px rgba(0,0,0,.35);
+  position: relative;
+  min-height: 520px;
+}
+.page.active { display: block; }
+.pager {
+  display: flex; justify-content: space-between; gap: 12px; margin-top: 16px;
+}
+.pager button {
+  background: transparent; border: 1.5px solid #4f7f8c; color: #e6f0f2;
+  border-radius: 999px; padding: 9px 18px; cursor: pointer; font-weight: 700;
+}
+.pager button:hover { background: #1c4e60; }
+.pager button[hidden] { visibility: hidden; display: block; }
+
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h2 { font-size: clamp(28px, 4.4vw, 42px); font-weight: 800; line-height: 1.05; }
+h3 { font-size: 19px; font-weight: 800; }
+.eyebrow {
+  font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 6px;
+}
+.lead { max-width: 62ch; color: var(--muted); margin: 10px 0 0; }
+
+/* ---------- tapa ---------- */
+#p-tapa {
+  background: var(--cover);
+  background-image:
+    repeating-radial-gradient(circle at 72% 40%, transparent 0 22px, rgba(214,178,94,.07) 22px 23px);
+  color: var(--gold);
+  display: none;
+  border-radius: 0 14px 14px 14px;
+}
+#p-tapa.active { display: block; }
+.cover-grid { display: grid; grid-template-columns: 1fr 1.05fr; gap: 28px 40px; align-items: center; }
+.cover-left { display: grid; gap: 16px; justify-items: start; }
+.cover-right { display: grid; gap: 12px; justify-items: center; }
+.cover-top { font-size: 14px; letter-spacing: .3em; text-transform: uppercase; font-weight: 700; }
+.cover-title { font-size: clamp(50px, 8vw, 88px); font-weight: 800; letter-spacing: .04em; line-height: .92; }
+.cover-sub { font-size: 17px; color: #e9dcb4; max-width: 36ch; margin: 0; }
+.cover-facts { display: flex; flex-wrap: wrap; gap: 10px 26px; color: #e9dcb4; font-size: 15px; }
+.cover-facts b { font-family: var(--font-display); font-size: 28px; color: var(--gold); display: block; line-height: 1; font-variant-numeric: tabular-nums; }
+.cover-hint { margin: 0; font-size: 14px; color: #b9cfd3; }
+.cover-hint.center { text-align: center; }
+.cs-row { display: flex; gap: 14px; margin-top: 8px; }
+.cs {
+  width: 86px; height: 86px; border-radius: 50%; border: 0; padding: 4px; cursor: pointer;
+  background: #f4efe0; box-shadow: 0 4px 0 #0a222c, 0 6px 14px rgba(0,0,0,.35);
+  transition: transform .12s, box-shadow .12s;
+}
+.cs:hover { transform: translateY(-2px) rotate(-4deg); }
+.cs:active, .cs.press { transform: translateY(3px) scale(.95); box-shadow: 0 1px 0 #0a222c, 0 2px 6px rgba(0,0,0,.3); }
+.cs svg { width: 100%; height: 100%; }
+.cover-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+.open-btn {
+  cursor: pointer;
+  background: var(--gold); color: var(--cover-deep); border: 0;
+  padding: 13px 26px; border-radius: 999px; font-weight: 700; font-size: 17px;
+}
+.open-btn:hover { background: #e6c675; }
+.sound-btn {
+  cursor: pointer; background: transparent; color: #e9dcb4; border: 1.5px solid #5f8790;
+  padding: 9px 16px; border-radius: 999px; font-size: 14px; font-weight: 700;
+}
+.sound-btn[aria-pressed="false"] { opacity: .7; }
+
+.wheel-wrap { position: relative; width: min(360px, 82vw); aspect-ratio: 1; touch-action: none; user-select: none; }
+.wheel { width: 100%; height: 100%; cursor: grab; display: block; filter: drop-shadow(0 10px 18px rgba(0,0,0,.35)); }
+.wheel.dragging { cursor: grabbing; }
+#wheelG { transform-origin: 160px 160px; }
+.wheel-pointer { position: absolute; left: 50%; top: -10px; width: 40px; transform: translateX(-50%); z-index: 2; filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
+.spin-btn {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 27%; aspect-ratio: 1; border-radius: 50%; border: 4px solid var(--cover-deep);
+  background: var(--gold); color: var(--cover-deep); font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(16px, 4vw, 22px); letter-spacing: .06em; cursor: pointer;
+  box-shadow: 0 4px 0 #8f7230, 0 0 0 6px rgba(214,178,94,.25);
+}
+.spin-btn:hover { background: #e6c675; }
+.spin-btn:active { transform: translate(-50%, -46%); box-shadow: 0 1px 0 #8f7230; }
+.spin-btn:disabled { cursor: wait; opacity: .85; }
+.draw-card {
+  width: 100%; max-width: 440px; background: var(--paper); color: var(--ink);
+  border-radius: 6px 16px 6px 16px; padding: 14px 18px 14px; border-left: 7px solid var(--st, var(--gold));
+  box-shadow: 0 8px 20px rgba(0,0,0,.3); min-height: 132px;
+  display: grid; gap: 6px; align-content: start;
+}
+.draw-card.pop { animation: pop .35s cubic-bezier(.2,1.5,.4,1); }
+@keyframes pop { from { transform: scale(.92) rotate(-1.5deg); } to { transform: none; } }
+.draw-card .dc-theme { font-size: 12.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.draw-card q { quotes: "“" "”"; font-family: var(--font-hand); font-size: 30px; line-height: 1.05; font-weight: 700; }
+.draw-card small { color: var(--muted); font-size: 13px; }
+.dc-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.dc-actions button {
+  cursor: pointer; border-radius: 999px; padding: 6px 13px; font-size: 14px; font-weight: 700;
+  border: 1.5px solid var(--ink); background: transparent; color: var(--ink);
+}
+.dc-actions button:hover { background: var(--ink); color: var(--paper); }
+@media (max-width: 820px) {
+  .cover-grid { grid-template-columns: 1fr; }
+  .cover-left { justify-items: center; text-align: center; }
+  .cover-facts, .cs-row, .cover-actions { justify-content: center; }
+  .cover-stamps { display: grid; justify-items: center; }
+  .cover-right { order: 2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .draw-card.pop, .cs { animation: none; transition: none; }
+}
+
+/* ---------- viajero ---------- */
+.traveler { display: grid; grid-template-columns: 1.15fr 1fr; gap: 32px; margin-top: 26px; }
+.qlist { display: grid; gap: 12px; margin: 16px 0 0; padding: 0; list-style: none; }
+.qlist li {
+  display: grid; grid-template-columns: 42px 1fr; gap: 12px; align-items: center;
+  background: rgba(255,255,255,.55); border: 1px solid var(--paper-line); border-radius: 12px; padding: 10px 14px;
+}
+.qicon {
+  width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--ink); color: var(--paper); font-family: var(--font-display); font-weight: 800; font-size: 20px;
+}
+.stampbox {
+  border: 2px dashed #a9c3bb; border-radius: 16px; padding: 18px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-content: start;
+}
+.stampbox h3 { grid-column: 1 / -1; }
+.stampbox p { grid-column: 1 / -1; margin: 0 0 6px; color: var(--muted); font-size: 15px; }
+.slot {
+  aspect-ratio: 1; border-radius: 50%; border: 2px dashed #b9cfc8;
+  display: grid; place-items: center; cursor: pointer; background: transparent; padding: 0;
+  color: var(--muted); font-size: 13px; font-weight: 700; text-align: center;
+}
+.slot:hover { border-color: var(--bar); }
+.slot svg { width: 100%; height: 100%; }
+
+/* ---------- sellos ---------- */
+.stamp { display: block; }
+.stamp-big {
+  position: absolute; right: clamp(12px, 4vw, 40px); top: clamp(10px, 3vw, 30px);
+  width: clamp(104px, 17vw, 150px); transform: rotate(-12deg); opacity: .9;
+  pointer-events: none;
+}
+.stamp-big.thump { animation: thump .55s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes thump {
+  0% { transform: rotate(-30deg) scale(1.9); opacity: 0; }
+  100% { transform: rotate(-12deg) scale(1); opacity: .9; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stamp-big.thump { animation: none; }
+  .note { transition: none !important; }
+}
+
+/* ---------- estación ---------- */
+.st-head { padding-right: clamp(110px, 18vw, 170px); }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 20px 0 6px; align-items: center; }
+.filters .lbl { font-size: 14px; color: var(--muted); margin-right: 4px; font-weight: 700; }
+.chip {
+  border: 1.5px solid #9fb9b1; background: rgba(255,255,255,.6); color: var(--ink);
+  border-radius: 999px; padding: 4px 11px; font-size: 14px; cursor: pointer;
+  display: inline-flex; gap: 6px; align-items: center;
+}
+.chip .n { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.chip[aria-pressed="true"] .n { color: #b7c9c4; }
+.cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 14px; }
+.col-h {
+  display: flex; gap: 10px; align-items: center; padding-bottom: 10px; margin-bottom: 12px;
+  border-bottom: 2px solid var(--ink);
+}
+.col-h .qicon { width: 34px; height: 34px; font-size: 17px; flex: 0 0 auto; }
+.col-h h3 { font-size: 16px; line-height: 1.2; }
+.notes { display: grid; gap: 10px; }
+.note {
+  background: #fffef8; border-radius: 4px 12px 4px 12px; padding: 10px 13px 9px;
+  border-left: 5px solid var(--st);
+  box-shadow: 0 1px 0 rgba(0,0,0,.06), 0 3px 8px rgba(27,42,49,.07);
+  transition: opacity .2s, transform .2s;
+}
+.note:nth-child(3n+1) { transform: rotate(-.5deg); }
+.note:nth-child(3n+2) { transform: rotate(.4deg); }
+.note q { quotes: none; font-family: var(--font-hand); font-size: 23px; line-height: 1.12; font-weight: 500; display: block; }
+.note .tags { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 5px; font-size: 12.5px; color: var(--muted); }
+.note.dim { opacity: .22; }
+.note.star { background: #fff6d6; }
+
+/* ---------- temas ---------- */
+.temas-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 30px; margin-top: 24px; }
+.chart { display: grid; gap: 8px; }
+.bar-row {
+  display: grid; grid-template-columns: 190px 1fr; gap: 12px; align-items: center;
+  background: transparent; border: 0; padding: 4px 6px; border-radius: 8px; cursor: pointer; text-align: left;
+}
+.bar-row:hover, .bar-row[aria-pressed="true"] { background: rgba(29,84,102,.09); }
+.bar-row .name { font-weight: 700; font-size: 15px; line-height: 1.2; }
+.bar-track { position: relative; height: 22px; display: flex; align-items: center; gap: 8px; }
+.bar-fill { height: 18px; background: var(--bar); border-radius: 0 4px 4px 0; min-width: 2px; }
+.bar-val { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 15px; color: var(--ink); }
+.bar-split { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.method { font-size: 14px; color: var(--muted); margin-top: 14px; max-width: 60ch; }
+.theme-detail {
+  background: rgba(255,255,255,.6); border: 1px solid var(--paper-line); border-radius: 14px; padding: 18px;
+  align-self: start;
+}
+.theme-detail ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; max-height: 420px; overflow-y: auto; }
+.theme-detail li { font-family: var(--font-hand); font-size: 22px; line-height: 1.1; padding-left: 12px; border-left: 4px solid var(--st); }
+.theme-detail li small { font-family: var(--font-body); font-size: 12px; color: var(--muted); display: block; margin-top: 2px; }
+
+/* ---------- visa ---------- */
+.visa {
+  margin-top: 22px; border: 2px solid var(--ink); border-radius: 16px; overflow: hidden;
+  background: #fbfdfb;
+}
+.visa-top {
+  background: var(--cover); color: var(--gold); padding: 14px 22px;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.visa-top .t { font-family: var(--font-display); font-weight: 800; font-size: clamp(20px, 3vw, 28px); letter-spacing: .03em; }
+.visa-top .s { font-size: 13px; letter-spacing: .2em; text-transform: uppercase; }
+.visa-body { display: grid; grid-template-columns: 1fr 210px; gap: 24px; padding: 22px; }
+.visa-name label { display: block; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.visa-name input {
+  width: 100%; border: 0; border-bottom: 2px solid var(--ink); background: transparent;
+  font-family: var(--font-hand); font-size: 34px; padding: 2px 0; color: var(--ink);
+}
+.visa-name input::placeholder { color: #9aaeb0; }
+.rules { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 12px; counter-reset: r; }
+.rules li {
+  counter-increment: r; display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start;
+}
+.rules li::before {
+  content: counter(r); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--ink); color: var(--paper); font-weight: 700; font-size: 15px; margin-top: 2px;
+}
+.rules q { quotes: none; font-family: var(--font-display); font-weight: 800; font-size: 21px; line-height: 1.15; display: block; }
+.rules .rd { display: block; font-size: 16px; margin-top: 2px; }
+.rules small { display: block; margin-top: 3px; }
+.share-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 18px; }
+.share-btn {
+  cursor: pointer; background: var(--ink); color: var(--paper); border: 0;
+  padding: 12px 22px; border-radius: 999px; font-weight: 700; font-size: 16px;
+}
+.share-btn:hover { background: #2c4550; }
+.share-btn.alt { background: transparent; color: var(--ink); border: 2px solid var(--ink); }
+.share-row .hint { font-size: 14px; color: var(--muted); }
+.modal {
+  position: fixed; inset: 0; z-index: 10; background: rgba(8,24,30,.82);
+  display: none; align-items: center; justify-content: center; padding: 16px;
+}
+.modal.open { display: flex; }
+.modal-card {
+  background: var(--paper); border-radius: 16px; padding: 18px; max-width: 560px; width: 100%;
+  max-height: 100%; overflow-y: auto; display: grid; gap: 12px;
+}
+.modal-card img { width: 100%; height: auto; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.25); display: block; }
+.modal-card .msg { font-size: 15px; color: var(--muted); margin: 0; }
+.modal-card .msg.ok { color: #1d6a3a; font-weight: 700; }
+.rules small { font-size: 13px; color: var(--muted); }
+.visa-stamps { display: grid; gap: 4px; align-content: start; justify-items: center; }
+.visa-stamps .vs { width: 132px; }
+.visa-stamps .vs:nth-child(1) { transform: rotate(-9deg); }
+.visa-stamps .vs:nth-child(2) { transform: rotate(7deg); margin-top: -26px; }
+.visa-stamps .vs:nth-child(3) { transform: rotate(-4deg); margin-top: -26px; }
+.visa-stamps .missing { opacity: .18; filter: grayscale(1); }
+.visa-stamps p { font-size: 13px; color: var(--muted); text-align: center; margin: 6px 0 0; }
+.mrz {
+  font-family: var(--font-mrz); font-size: clamp(11px, 1.9vw, 16px); letter-spacing: .12em;
+  background: #e7efe9; padding: 12px 22px; line-height: 1.5; overflow-x: auto; white-space: nowrap;
+  border-top: 1px dashed #a9c3bb;
+}
+.closing {
+  margin-top: 22px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+}
+.closing q { quotes: "“" "”"; font-family: var(--font-hand); font-size: 32px; font-weight: 700; }
+.closing span { color: var(--muted); font-size: 14px; }
+
+.tip { position: fixed; pointer-events: none; z-index: 5; background: var(--ink); color: var(--paper);
+  font-size: 13px; padding: 7px 10px; border-radius: 8px; max-width: 240px; display: none; line-height: 1.35; }
+
+@media (max-width: 820px) {
+  .traveler, .temas-grid { grid-template-columns: 1fr; }
+  .cols { grid-template-columns: 1fr; }
+  .visa-body { grid-template-columns: 1fr; }
+  .visa-stamps { grid-template-columns: repeat(3, 1fr); }
+  .visa-stamps .vs { width: 100%; max-width: 120px; margin-top: 0 !important; }
+  .visa-stamps p { grid-column: 1 / -1; }
+  .bar-row { grid-template-columns: 1fr; gap: 2px; }
+}
+@media (max-width: 420px) {
+  body { font-size: 16px; }
+  .note q { font-size: 21px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="tabs" id="tabs" aria-label="Páginas del pasaporte"></nav>
+
+  <section class="page" id="p-tapa" data-page="tapa" aria-label="Tapa">
+    <div class="cover-grid">
+      <div class="cover-left">
+        <div class="cover-top">República de las Preguntas</div>
+        <h1 class="cover-title">PASAPORTE<br>IA</h1>
+        <p class="cover-sub">Lo que descubrimos, lo que nos preocupa y lo que vamos a tener en cuenta después de recorrer tres estaciones sobre inteligencia artificial.</p>
+        <div class="cover-facts" id="coverFacts"></div>
+        <div class="cover-stamps">
+          <p class="cover-hint">Tocá un sello para ver una frase de esa estación</p>
+          <div class="cs-row" id="coverStamps"></div>
+        </div>
+        <div class="cover-actions">
+          <button class="open-btn" type="button" data-go="viajero">Abrir el pasaporte</button>
+          <button class="sound-btn" type="button" id="soundBtn" aria-pressed="true">Sonido: sí</button>
+        </div>
+      </div>
+      <div class="cover-right">
+        <div class="wheel-wrap" id="wheelWrap">
+          <svg class="wheel-pointer" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 38 L6 6 H34 Z" fill="#d6b25e" stroke="#0c2a36" stroke-width="3" stroke-linejoin="round"/></svg>
+          <svg class="wheel" id="wheel" viewBox="0 0 320 320" aria-hidden="true"><g id="wheelG"></g></svg>
+          <button class="spin-btn" type="button" id="spinBtn">GIRÁ</button>
+        </div>
+        <p class="cover-hint center">Tocá GIRÁ o arrastrá la ruleta con el dedo</p>
+        <div class="draw-card" id="drawCard" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="p-viajero" data-page="viajero" aria-label="Cómo leer este pasaporte">
+    <div class="eyebrow">Página 1 · Datos del viaje</div>
+    <h2>Tres estaciones, tres preguntas</h2>
+    <p class="lead">En cada estación completamos el pasaporte con tres preguntas. Acá están todas las respuestas, juntas. Entrá a cada estación para ganar su sello.</p>
+    <div class="traveler">
+      <div>
+        <h3>Las preguntas del pasaporte</h3>
+        <ul class="qlist" id="qlist"></ul>
+      </div>
+      <div class="stampbox">
+        <h3>Mis sellos</h3>
+        <p id="stampHint">Tocá un casillero para ir a esa estación.</p>
+        <div id="slots" style="display:contents"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="p-videos" data-page="videos" data-station="videos"></section>
+  <section class="page" id="p-apps" data-page="apps" data-station="apps"></section>
+  <section class="page" id="p-prompts" data-page="prompts" data-station="prompts"></section>
+
+  <section class="page" id="p-temas" data-page="temas" aria-label="Mapa de temas">
+    <div class="eyebrow">Página 5 · Mapa de temas</div>
+    <h2>¿De qué hablamos más?</h2>
+    <p class="lead">Agrupamos todas las respuestas de las tres estaciones por tema. Tocá un tema para leer qué dijimos.</p>
+    <div class="temas-grid">
+      <div>
+        <div class="chart" id="chart" role="group" aria-label="Cantidad de respuestas por tema"></div>
+        <p class="method" id="method"></p>
+      </div>
+      <div class="theme-detail" id="themeDetail" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="page" id="p-visa" data-page="visa" aria-label="Visa">
+    <div class="eyebrow">Página 6 · Visa</div>
+    <h2>Visa de viajero/a responsable de IA</h2>
+    <p class="lead">Estas reglas son las conclusiones de todo lo que respondimos en las tres estaciones. Debajo de cada una figura de cuántas respuestas sale.</p>
+    <div class="visa">
+      <div class="visa-top"><span class="t">VISA · IA RESPONSABLE</span><span class="s">Válida para todo el viaje</span></div>
+      <div class="visa-body">
+        <div>
+          <div class="visa-name">
+            <label for="travName">Nombre del viajero/a</label>
+            <input id="travName" type="text" maxlength="40" placeholder="Escribí tu nombre" autocomplete="off">
+          </div>
+          <ol class="rules" id="rules"></ol>
+        </div>
+        <div class="visa-stamps" id="visaStamps"></div>
+      </div>
+      <div class="mrz" id="mrz" aria-hidden="true"></div>
+    </div>
+    <div class="share-row">
+      <button class="share-btn" type="button" id="makeImg">Guardar mi visa como imagen</button>
+      <span class="hint">Se genera un JPG con tu nombre para imprimir o compartir.</span>
+    </div>
+    <div class="closing"><q>Están buenazos los trabajos que hicimos</q><span>— de un pasaporte de la Batalla de prompts</span></div>
+  </section>
+
+  <div class="pager">
+    <button type="button" id="prev">← Anterior</button>
+    <button type="button" id="next">Siguiente →</button>
+  </div>
+</div>
+<div class="tip" id="tip" role="tooltip"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-card">
+    <h3 id="modalTitle">Tu visa</h3>
+    <img id="visaImg" alt="Visa de viajero/a responsable de IA con tu nombre, las reglas y los sellos">
+    <p class="msg" id="dlMsg"></p>
+    <div class="share-row" style="margin-top:0">
+      <button class="share-btn" type="button" id="dlBtn" hidden>Descargar JPG</button>
+      <button class="share-btn alt" type="button" id="closeModal">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- datos ----------------
+   Respuestas tal como las escribieron, con correcciones mínimas de tipeo.
+   Cada fila es una fila de la síntesis: [no sabía, me preocupa, tendré en cuenta]. */
+const THEMES = {
+  pedir:      "Pedirle bien",
+  falso:      "Lo falso que parece real",
+  agua:       "El agua que gasta",
+  como:       "¿Cómo lo hace?",
+  errores:    "La IA se equivoca",
+  personas:   "Quién la crea y la entrena",
+  cuidado:    "Usarla con cuidado",
+  privacidad: "Privacidad"
+};
+const Q = [
+  { id: "nosabia", icon: "!", label: "Algo que no sabía" },
+  { id: "preocupa", icon: "?", label: "Algo que me preocupa o me genera una pregunta" },
+  { id: "proxima", icon: "→", label: "Algo que debería tener en cuenta la próxima vez que use IA" }
+];
+const S = (t, ...k) => ({ t, k });
+const STATIONS = [
+  { id: "videos", name: "Videos", n: 1, color: "var(--st-videos)", hex: "#1f5fa8",
+    sub: "Lo que descubrimos mirando videos sobre IA.",
+    rows: [
+      [S("ChatGPT y otras IA necesitan de la humanidad","personas"), S("Por qué la humanidad usa IA para cosas como imágenes inapropiadas","cuidado"), S("No usar mal la IA","cuidado")],
+      [S("Que Uber usa IA"), S("Que no puede distinguir bien objetos con un mismo color o forma","errores"), S("Saber explicarle muy bien lo que le pido","pedir")],
+      [S("Que detrás de la IA hay personas reales trabajando","personas"), S("Si es verdad que la IA se usa con agua","agua"), null],
+      [S("Que la IA pone dedos de más","errores","falso"), S("Que no distinguimos la realidad de la IA","falso"), S("Usar datos que sean reales","pedir")],
+      [S("Que se usa agua potable para refrigerar sistemas electrónicos","agua"), S("Que cada vez nos engaña más la IA","falso"), null],
+      [S("Puede gastar mucha agua por exceso de la IA","agua"), S("Que la IA puede hacer cosas subidas de tono con tal de satisfacer nuestras necesidades","cuidado"), S("Usar de vez en cuando porque gasta agua","agua","cuidado")],
+      [S("Que la aspiradora puede tomar fotos","privacidad"), S("Me preocupa que la aspiradora pueda tomar fotos","privacidad"), S("Que se lo pida como ellos hablan, a la IA","pedir")],
+      [S("Que se consume agua al usar IA","agua"), S("Qué será de nuestro planeta el día de mañana","agua"), S("No usar tanto la IA","cuidado")],
+      [S("Que consumía tanta agua","agua"), S("Toda el agua que consume","agua"), S("Sobre el agua que se desperdicia","agua")],
+      [S("Que las apps están valoradas en mucha plata"), S("Por quién están creadas las apps","personas"), S("Que no hay que usar la IA para crear imágenes falsas","falso","cuidado")],
+      [S("Que hay muchas noticias falsas","falso"), S("Que hoy en día se usa mucho la IA"), S("Tener cuidado con lo que le pido a la IA","pedir","cuidado")],
+      [S("Que 6 de cada 10 personas no pueden identificar si una imagen es real o no","falso"), S("Que hoy es más fácil realizar estafas y noticias falsas sobre gente mayor","falso"), S("Que cada vez que se usa se está entrenando y haciendo más exacta","personas")],
+      [S("Que podía hacer videos con IA, me sorprendió mucho eso","como"), null, null],
+      [S("Que la IA usa agua","agua"), null, S("Que gasta agua potable","agua")],
+      [S("Que las aspiradoras saben qué aspirar y qué no","como"), S("Que una aspiradora le sacó una imagen a alguien en un baño","privacidad"), S("Que atrás de todo esto de la IA hay personas","personas")],
+      [S("Que la IA consume agua","agua"), null, S("Las palabras","pedir")],
+      [S("Que las empresas usan la IA a propósito para que no pensemos","cuidado"), null, null],
+      [S("Que hay que pedirle las cosas con detalle","pedir"), null, null]
+    ] },
+  { id: "apps", name: "Apps", n: 2, color: "var(--st-apps)", hex: "#c26a10",
+    sub: "Lo que descubrimos probando aplicaciones con IA.",
+    rows: [
+      [null, null, S("No darle mala información a la IA","pedir")],
+      [null, null, null],
+      [S("Que la IA no sabe identificar la basura con elementos","errores"), null, S("Hacerle bien la pregunta a la IA","pedir")],
+      [null, null, null],
+      [S("Que podían hacer imágenes que me confunden","falso"), S("Que la IA puede hacer imágenes de personas que no podemos distinguir de personas reales","falso"), S("El enfoque y la textura de la piel","falso")],
+      [null, S("Que la IA tomó un foco de luz como un ser vivo del agua","errores"), S("Que le explique bien a la IA lo que es un animal acuático y qué es un residuo","pedir")],
+      [S("Que la IA humaniza muy bien las fotos","falso"), S("Que en un momento la IA nos supere","como"), S("Que tenga cuidado con lo que le pide a la IA","pedir","cuidado")],
+      [S("Hace las cosas como si fueran mejores","falso"), S("Hace referencia a las caras de algunas personas","falso"), S("Lo que le pido","pedir")],
+      [S("Que nosotros la tenemos que entrenar a la IA","personas"), S("Cómo sabe todo lo que le pedimos","como"), S("Que la próxima vez que use IA le comente bien lo que quiero pedir","pedir")],
+      [null, null, null],
+      [S("Que la IA repite errores cuando la entrenamos","errores","personas"), S("Si cometen varios errores al entrenar una IA, ¿cómo sabemos si es confiable?","errores"), S("Que la IA repite errores o todo lo que me diga es perfecto","errores")],
+      [S("Que le podía hacer cualquier cosa","como"), S("Cómo hace la imagen que le pedí","como"), S("Que tenga cuidado qué le pido","pedir","cuidado")],
+      [S("Cuál imagen es correcta","falso"), S("Si te hacen una denuncia con pruebas de IA","falso"), S("Fijarme en la claridad de los ojos","falso")],
+      [S("Que la IA no puede copiar una cara exactamente","errores"), S("Por qué no copia una cara exactamente","errores"), S("Mirar bien el fondo de la imagen","falso")],
+      [null, null, S("Tener cuidado con lo que le pido","pedir","cuidado")],
+      [S("Que la IA no sabe identificar basura con peces","errores"), S("Que la IA puede crear cosas inventadas pero muy realistas","falso"), S("Hacer bien las preguntas","pedir")]
+    ] },
+  { id: "prompts", name: "Batalla de prompts", n: 3, color: "var(--st-prompts)", hex: "#9c3fa8",
+    sub: "Lo que descubrimos compitiendo con prompts para crear imágenes.",
+    rows: [
+      [S("La IA tiene conocimientos de todo el mundo","como"), null, S("Hay que especificar muy bien lo que le vamos a pedir a la IA","pedir")],
+      [null, S("Que la IA sabe hacer muy bien las imágenes","falso"), S("Poner bien la pregunta","pedir")],
+      [S("No sabía qué era un prompt","pedir"), null, null],
+      [S("Tenés que ser muy específico","pedir"), S("Cada vez avanza más la IA","como"), null],
+      [null, S("Cómo es que puede captar muy rápido","como"), null],
+      [S("Que la IA lo que le digas hace","pedir"), null, S("Están buenazos los trabajos que hicimos")],
+      [S("Que se pueden generar muy bien las imágenes con IA","falso"), S("Que se generan personas o cuentas falsas","falso"), S("Tener cuidado con la IA","cuidado")],
+      [S("Que lo hacía muy bien si le decías bien específico","pedir"), S("Cómo lo hace","como"), S("Ser bien específico","pedir")],
+      [S("Que podía crear imágenes","como"), S("Cómo entiende lo que le preguntamos","como"), S("Que crea cosas muy reales","falso")],
+      [S("Que usando palabras parecidas podemos crear cosas parecidas","pedir"), S("La originalidad de las imágenes que crea","como"), S("Que siempre me da imágenes diferentes","como")],
+      [S("No sabía lo que era un prompt","pedir"), S("Cómo hace la IA para saber tantas cosas","como"), S("Que cuando haga una prueba no sea tan obvio","pedir")],
+      [S("No sabía qué era un prompt","pedir"), null, S("Ser rápido y específico","pedir")]
+    ] }
+];
+/* Reglas de la visa: conclusiones generales, cada una sale de uno o más temas.
+   La cantidad de respuestas que la sostienen se calcula sobre los datos. */
+const RULES = [
+  { t: "Pedile con claridad y detalle", d: "Lo que la IA te devuelve depende de cómo se lo pedís.", k: ["pedir"] },
+  { t: "Antes de creer o compartir, revisá", d: "La IA puede crear imágenes, videos y noticias falsas que parecen reales.", k: ["falso"] },
+  { t: "No le creas todo", d: "La IA se equivoca y repite errores: revisá lo que te da.", k: ["errores"] },
+  { t: "Usala cuando la necesites", d: "Cada vez que la usamos gasta energía y agua.", k: ["agua"] },
+  { t: "Preguntate quién está detrás", d: "Personas y empresas la crean y la entrenan. Seguí preguntando cómo funciona.", k: ["personas", "como"] },
+  { t: "Usala para bien", d: "No la uses para engañar, dañar ni exponer a nadie, y cuidá tu privacidad.", k: ["cuidado", "privacidad"] }
+];
+
+/* ---------------- derivados ---------------- */
+const ALL = [];
+STATIONS.forEach(st => { st.rows = st.rows.filter(r => r.some(Boolean)); });
+STATIONS.forEach(st => st.rows.forEach(r => r.forEach((c, qi) => {
+  if (c) ALL.push({ ...c, st, q: Q[qi] });
+})));
+const PAGES = ["tapa", "viajero", "videos", "apps", "prompts", "temas", "visa"];
+const PAGE_LABEL = { tapa: "Tapa", viajero: "El viaje", videos: "Videos", apps: "Apps", prompts: "Batalla de prompts", temas: "Temas", visa: "Visa" };
+const visited = new Set();
+try { JSON.parse(localStorage.getItem("pasaporte-ia-sellos") || "[]").forEach(v => visited.add(v)); } catch (e) {}
+const saveVisited = () => { try { localStorage.setItem("pasaporte-ia-sellos", JSON.stringify([...visited])); } catch (e) {} };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+let uid = 0;
+function stampSVG(st, cls) {
+  const id = "arc" + (uid++);
+  const top = st.name.toUpperCase();
+  return `<svg class="stamp ${cls || ""}" viewBox="0 0 160 160" role="img" aria-label="Sello de ${esc(st.name)}">
+    <defs><path id="${id}" d="M 80 80 m -56 0 a 56 56 0 1 1 112 0 a 56 56 0 1 1 -112 0"/></defs>
+    <g fill="none" stroke="${st.hex}">
+      <circle cx="80" cy="80" r="74" stroke-width="5"/>
+      <circle cx="80" cy="80" r="66" stroke-width="1.5"/>
+      <circle cx="80" cy="80" r="44" stroke-width="2"/>
+    </g>
+    <text fill="${st.hex}" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="${top.length > 10 ? 11 : 14}" letter-spacing="2">
+      <textPath href="#${id}" startOffset="25%" text-anchor="middle">★ ${esc(top)} ★</textPath>
+    </text>
+    <text x="80" y="76" text-anchor="middle" fill="${st.hex}" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="13" letter-spacing="1">ESTACIÓN</text>
+    <text x="80" y="104" text-anchor="middle" fill="${st.hex}" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="30">${st.n}</text>
+  </svg>`;
+}
+
+/* ---------------- tapa y viaje ---------------- */
+document.getElementById("coverFacts").innerHTML =
+  `<div><b>3</b>estaciones</div><div><b>${ALL.length}</b>respuestas</div><div><b>${Object.keys(THEMES).length}</b>temas</div>`;
+document.getElementById("qlist").innerHTML = Q.map(q =>
+  `<li><span class="qicon" aria-hidden="true">${q.icon}</span><span>${esc(q.label)}</span></li>`).join("");
+
+function renderSlots() {
+  document.getElementById("slots").innerHTML = STATIONS.map(st =>
+    `<button class="slot" type="button" data-go="${st.id}" aria-label="Ir a ${esc(st.name)}${visited.has(st.id) ? " (sellado)" : ""}">${
+      visited.has(st.id) ? stampSVG(st) : esc(st.name)}</button>`).join("");
+  const n = STATIONS.filter(s => visited.has(s.id)).length;
+  document.getElementById("stampHint").textContent = n === 3
+    ? "¡Pasaporte completo! Ya podés sacar tu visa."
+    : `Tenés ${n} de 3 sellos. Tocá un casillero para ir a esa estación.`;
+  document.querySelectorAll(".tab .dot").forEach(d => d.classList.toggle("on", visited.has(d.dataset.st)));
+}
+
+/* ---------------- estaciones ---------------- */
+STATIONS.forEach(st => {
+  const el = document.getElementById("p-" + st.id);
+  el.setAttribute("aria-label", "Estación " + st.name);
+  const items = ALL.filter(a => a.st === st);
+  const counts = {};
+  items.forEach(a => a.k.forEach(k => counts[k] = (counts[k] || 0) + 1));
+  const themeKeys = Object.keys(THEMES).filter(k => counts[k]).sort((a, b) => counts[b] - counts[a]);
+  el.innerHTML = `
+    <div class="stamp-big" data-stamp>${stampSVG(st)}</div>
+    <div class="st-head">
+      <div class="eyebrow">Página ${st.n + 1} · Estación ${st.n}</div>
+      <h2>${esc(st.name)}</h2>
+      <p class="lead">${esc(st.sub)} ${items.length} respuestas.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Filtrar por tema">
+      <span class="lbl">Resaltar tema:</span>
+      <button class="chip" type="button" aria-pressed="true" data-f="">Todos</button>
+      ${themeKeys.map(k => `<button class="chip" type="button" aria-pressed="false" data-f="${k}">${esc(THEMES[k])} <span class="n">${counts[k]}</span></button>`).join("")}
+    </div>
+    <div class="cols">
+      ${Q.map((q, qi) => `
+        <div>
+          <div class="col-h"><span class="qicon" aria-hidden="true">${q.icon}</span><h3>${esc(q.label)}</h3></div>
+          <div class="notes">
+            ${st.rows.map(r => r[qi]).filter(Boolean).map(c => `
+              <div class="note${c.k.length ? "" : " star"}" style="--st:${st.color}" data-k="${c.k.join(" ")}">
+                <q>${esc(c.t)}</q>
+                ${c.k.length ? `<div class="tags">${c.k.map(k => "#" + esc(THEMES[k])).join(" ")}</div>` : ""}
+              </div>`).join("")}
+          </div>
+        </div>`).join("")}
+    </div>`;
+  el.querySelectorAll(".chip").forEach(ch => ch.addEventListener("click", () => {
+    el.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c === ch)));
+    const f = ch.dataset.f;
+    el.querySelectorAll(".note").forEach(n => n.classList.toggle("dim", !!f && !n.dataset.k.split(" ").includes(f)));
+  }));
+});
+
+/* ---------------- temas ---------------- */
+const themeCounts = Object.keys(THEMES).map(k => {
+  const its = ALL.filter(a => a.k.includes(k));
+  const by = {};
+  STATIONS.forEach(s => by[s.id] = its.filter(a => a.st === s).length);
+  return { k, n: its.length, by, its };
+}).sort((a, b) => b.n - a.n);
+const maxN = themeCounts[0].n;
+const untagged = ALL.filter(a => !a.k.length).length;
+document.getElementById("method").textContent =
+  `Cada barra cuenta cuántas de las ${ALL.length} respuestas tocan ese tema. Los temas los asignamos a mano, leyendo cada frase; una frase puede tocar dos temas, por eso las barras suman más que el total. ${untagged} respuestas no entraron en ningún tema.`;
+const chart = document.getElementById("chart");
+chart.innerHTML = themeCounts.map(t => `
+  <button class="bar-row" type="button" aria-pressed="false" data-k="${t.k}"
+    aria-label="${esc(THEMES[t.k])}: ${t.n} respuestas">
+    <span class="name">${esc(THEMES[t.k])}</span>
+    <span class="bar-track">
+      <span class="bar-fill" style="width:calc((100% - 60px) * ${t.n / maxN})"></span>
+      <span class="bar-val">${t.n}</span>
+    </span>
+  </button>`).join("");
+function showTheme(k) {
+  const t = themeCounts.find(x => x.k === k);
+  chart.querySelectorAll(".bar-row").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === k)));
+  document.getElementById("themeDetail").innerHTML = `
+    <div class="eyebrow">${t.n} respuestas</div>
+    <h3>${esc(THEMES[k])}</h3>
+    <p class="method" style="margin-top:6px">${STATIONS.map(s => `${esc(s.name)}: ${t.by[s.id]}`).join(" · ")}</p>
+    <ul>${t.its.map(a => `<li style="--st:${a.st.color}">${esc(a.t)}<small>${esc(a.st.name)} · ${esc(a.q.label)}</small></li>`).join("")}</ul>`;
+}
+chart.querySelectorAll(".bar-row").forEach(b => b.addEventListener("click", () => showTheme(b.dataset.k)));
+showTheme(themeCounts[0].k);
+
+const tip = document.getElementById("tip");
+chart.addEventListener("pointermove", e => {
+  const b = e.target.closest(".bar-row");
+  if (!b) { tip.style.display = "none"; return; }
+  const t = themeCounts.find(x => x.k === b.dataset.k);
+  tip.innerHTML = `<b>${esc(THEMES[t.k])}</b> · ${t.n}<br>${STATIONS.map(s => `${esc(s.name)}: ${t.by[s.id]}`).join("<br>")}`;
+  tip.style.display = "block";
+  const x = Math.min(e.clientX + 14, window.innerWidth - 250);
+  tip.style.left = x + "px"; tip.style.top = (e.clientY + 14) + "px";
+});
+chart.addEventListener("pointerleave", () => tip.style.display = "none");
+
+/* ---------------- visa ---------------- */
+RULES.forEach(r => r.n = ALL.filter(a => a.k.some(k => r.k.includes(k))).length);
+document.getElementById("rules").innerHTML = RULES.map(r =>
+  `<li><div><q>${esc(r.t)}</q><span class="rd">${esc(r.d)}</span><small>Sale de ${r.n} respuestas · ${r.k.map(k => "#" + esc(THEMES[k])).join(" ")}</small></div></li>`).join("");
+const nameIn = document.getElementById("travName");
+try { nameIn.value = localStorage.getItem("pasaporte-ia-nombre") || ""; } catch (e) {}
+function renderVisa() {
+  const n = STATIONS.filter(s => visited.has(s.id)).length;
+  document.getElementById("visaStamps").innerHTML =
+    STATIONS.map(st => stampSVG(st, "vs" + (visited.has(st.id) ? "" : " missing"))).join("") +
+    `<p>${n === 3 ? "Sellos completos" : `Sellos: ${n} de 3. Recorré las estaciones que faltan.`}</p>`;
+  const nm = (nameIn.value || "VIAJERO").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z]+/g, "<");
+  const l1 = ("V<IA<" + nm + "<<RESPONSABLE").padEnd(44, "<").slice(0, 44);
+  const l2 = ("ESTACIONES<VIDEOS<APPS<PROMPTS<" + ALL.length + "RESP").padEnd(44, "<").slice(0, 44);
+  document.getElementById("mrz").innerHTML = esc(l1) + "<br>" + esc(l2);
+}
+nameIn.addEventListener("input", () => {
+  try { localStorage.setItem("pasaporte-ia-nombre", nameIn.value); } catch (e) {}
+  renderVisa();
+});
+
+/* ---------------- visa como imagen (canvas) ---------------- */
+const W = 1080, H = 1350;
+function wrapLines(ctx, text, maxW) {
+  const words = text.split(" "), lines = [];
+  let line = "";
+  words.forEach(w => {
+    const test = line ? line + " " + w : w;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+function drawStamp(ctx, st, cx, cy, r, on, rot) {
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(rot);
+  ctx.globalAlpha = on ? 0.92 : 0.18;
+  const col = on ? st.hex : "#7d8b8f";
+  ctx.strokeStyle = col; ctx.fillStyle = col;
+  ctx.lineWidth = r * 0.065; ctx.beginPath(); ctx.arc(0, 0, r * 0.93, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = r * 0.02; ctx.beginPath(); ctx.arc(0, 0, r * 0.83, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = r * 0.025; ctx.beginPath(); ctx.arc(0, 0, r * 0.55, 0, Math.PI * 2); ctx.stroke();
+  // texto en arco
+  const label = "★ " + st.name.toUpperCase() + " ★";
+  const fs = r * (label.length > 14 ? 0.13 : 0.17);
+  ctx.font = `800 ${fs}px "Bricolage Grotesque", sans-serif`;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const rad = r * 0.69, spacing = fs * 0.12;
+  const widths = [...label].map(c => ctx.measureText(c).width + spacing);
+  const total = widths.reduce((a, b) => a + b, 0);
+  let ang = -Math.PI / 2 - (total / rad) / 2;
+  [...label].forEach((c, i) => {
+    const a = ang + (widths[i] / 2) / rad;
+    ctx.save(); ctx.rotate(a); ctx.translate(rad, 0); ctx.rotate(Math.PI / 2); ctx.fillText(c, 0, 0); ctx.restore();
+    ang += widths[i] / rad;
+  });
+  ctx.font = `800 ${r * 0.16}px "Bricolage Grotesque", sans-serif`;
+  ctx.fillText("ESTACIÓN", 0, -r * 0.12);
+  ctx.font = `800 ${r * 0.38}px "Bricolage Grotesque", sans-serif`;
+  ctx.fillText(String(st.n), 0, r * 0.25);
+  ctx.restore();
+}
+async function buildVisaImage() {
+  try {
+    await Promise.all([
+      document.fonts.load('800 40px "Bricolage Grotesque"'),
+      document.fonts.load('400 24px "Atkinson Hyperlegible"'),
+      document.fonts.load('700 24px "Atkinson Hyperlegible"'),
+      document.fonts.load('700 60px "Caveat"'),
+      document.fonts.load('700 28px "Courier Prime"')
+    ]);
+  } catch (e) {}
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const ctx = c.getContext("2d");
+  // papel + guilloché
+  ctx.fillStyle = "#edf3ef"; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(29,84,102,.07)"; ctx.lineWidth = 1.5;
+  for (let r = 20; r < 1500; r += 16) { ctx.beginPath(); ctx.arc(W + 120, -120, r, 0, Math.PI * 2); ctx.stroke(); }
+  for (let r = 20; r < 1500; r += 21) { ctx.beginPath(); ctx.arc(-120, H + 120, r, 0, Math.PI * 2); ctx.stroke(); }
+  // encabezado
+  ctx.fillStyle = "#123a4a"; ctx.fillRect(0, 0, W, 170);
+  ctx.fillStyle = "#d6b25e"; ctx.textBaseline = "alphabetic"; ctx.textAlign = "left";
+  ctx.font = '700 22px "Atkinson Hyperlegible", sans-serif';
+  ctx.fillText("PASAPORTE IA  ·  VÁLIDA PARA TODO EL VIAJE", 70, 62);
+  ctx.font = '800 64px "Bricolage Grotesque", sans-serif';
+  ctx.fillText("VISA · IA RESPONSABLE", 70, 135);
+  // nombre
+  ctx.fillStyle = "#56676d"; ctx.font = '700 20px "Atkinson Hyperlegible", sans-serif';
+  ctx.fillText("NOMBRE DEL VIAJERO/A", 70, 222);
+  const name = (nameIn.value || "").trim() || "Viajero/a";
+  ctx.fillStyle = "#1b2a31"; ctx.font = '700 72px "Caveat", cursive';
+  let nm = name; while (ctx.measureText(nm).width > 940 && nm.length > 3) nm = nm.slice(0, -2);
+  ctx.fillText(nm, 70, 292);
+  ctx.strokeStyle = "#1b2a31"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(70, 310); ctx.lineTo(W - 70, 310); ctx.stroke();
+  // reglas
+  let y = 368;
+  RULES.forEach((r, i) => {
+    ctx.fillStyle = "#1b2a31";
+    ctx.beginPath(); ctx.arc(92, y - 12, 22, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#edf3ef"; ctx.font = '700 24px "Atkinson Hyperlegible", sans-serif'; ctx.textAlign = "center";
+    ctx.fillText(String(i + 1), 92, y - 3);
+    ctx.textAlign = "left"; ctx.fillStyle = "#1b2a31";
+    ctx.font = '800 34px "Bricolage Grotesque", sans-serif';
+    ctx.fillText(r.t, 134, y);
+    ctx.font = '400 25px "Atkinson Hyperlegible", sans-serif'; ctx.fillStyle = "#33454c";
+    const lines = wrapLines(ctx, r.d, W - 134 - 70);
+    lines.forEach((ln, j) => ctx.fillText(ln, 134, y + 38 + j * 32));
+    y += 38 + lines.length * 32 + 30;
+  });
+  // sellos
+  const sy = Math.max(y + 70, 1110);
+  const rots = [-0.16, 0.12, -0.07];
+  STATIONS.forEach((st, i) => drawStamp(ctx, st, 150 + i * 165, sy, 78, visited.has(st.id), rots[i]));
+  ctx.fillStyle = "#56676d"; ctx.textAlign = "left";
+  ctx.font = '700 22px "Atkinson Hyperlegible", sans-serif';
+  const nv = STATIONS.filter(s => visited.has(s.id)).length;
+  ctx.fillText(nv === 3 ? "Recorrí las 3 estaciones" : `Sellos: ${nv} de 3`, 620, sy - 10);
+  ctx.font = '400 20px "Atkinson Hyperlegible", sans-serif';
+  ctx.fillText(`Reglas que salen de ${ALL.length} respuestas`, 620, sy + 22);
+  // banda MRZ
+  ctx.fillStyle = "#dfe9e3"; ctx.fillRect(0, H - 110, W, 110);
+  ctx.fillStyle = "#1b2a31"; ctx.font = '700 29px "Courier Prime", monospace';
+  const m = document.getElementById("mrz").innerHTML.split("<br>").map(t => t.replace(/&lt;/g, "<"));
+  m.forEach((ln, i) => ctx.fillText(ln, 60, H - 64 + i * 38));
+  return c;
+}
+
+const modal = document.getElementById("modal"), visaImg = document.getElementById("visaImg");
+const dlBtn = document.getElementById("dlBtn"), dlMsg = document.getElementById("dlMsg");
+/* Descarga en dos modos:
+   - dentro de claude.ai: capacidad "downloads" (el marco bloquea las descargas comunes);
+   - en cualquier otro sitio (GitHub Pages, archivo local): enlace <a download> del navegador. */
+const inClaude = !!(window.claude && typeof window.claude.use === "function");
+let downloads = null, lastBlob = null, blobUrl = null;
+const MANUAL = "Si no se descarga, mantené apretada la imagen (celular) o hacé clic derecho y elegí “Guardar imagen como…”.";
+dlBtn.hidden = false;
+dlMsg.textContent = MANUAL;
+if (inClaude) {
+  window.claude.use("downloads").then(d => { downloads = d; if (!d) dlBtn.hidden = true; }).catch(() => { dlBtn.hidden = true; });
+}
+const visaFilename = () => {
+  const slug = ((nameIn.value || "").trim() || "viajero").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "viajero";
+  return `visa-ia-${slug}.jpg`;
+};
+document.getElementById("makeImg").addEventListener("click", async () => {
+  const c = await buildVisaImage();
+  visaImg.src = c.toDataURL("image/jpeg", 0.92);
+  lastBlob = await new Promise(res => c.toBlob(res, "image/jpeg", 0.92));
+  if (blobUrl) URL.revokeObjectURL(blobUrl);
+  blobUrl = lastBlob ? URL.createObjectURL(lastBlob) : null;
+  dlMsg.classList.remove("ok");
+  dlMsg.textContent = MANUAL;
+  modal.classList.add("open");
+  (dlBtn.hidden ? document.getElementById("closeModal") : dlBtn).focus();
+});
+dlBtn.addEventListener("click", async () => {
+  if (!lastBlob) return;
+  const filename = visaFilename();
+  if (inClaude) {
+    if (!downloads) { dlBtn.hidden = true; dlMsg.textContent = MANUAL; return; }
+    try {
+      await downloads.save({ filename, data: lastBlob });
+      dlMsg.textContent = "¡Listo! La visa se guardó."; dlMsg.classList.add("ok");
+    } catch (e) {
+      dlMsg.classList.remove("ok");
+      if (e && e.code === "declined") dlMsg.textContent = "No se descargó. Podés volver a intentarlo cuando quieras.";
+      else if (e && e.code === "rate_limited") dlMsg.textContent = "Ya hay una descarga esperando confirmación. Probá de nuevo en unos segundos.";
+      else { dlBtn.hidden = true; dlMsg.textContent = MANUAL; }
+    }
+    return;
+  }
+  // descarga común del navegador
+  const a = document.createElement("a");
+  a.href = blobUrl || visaImg.src;
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  dlMsg.textContent = `Se descargó “${filename}”. ${MANUAL}`;
+  dlMsg.classList.add("ok");
+});
+function closeModal() { modal.classList.remove("open"); document.getElementById("makeImg").focus(); }
+document.getElementById("closeModal").addEventListener("click", closeModal);
+modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && modal.classList.contains("open")) closeModal(); });
+
+/* ---------------- tapa: ruleta, sellos y sonido ---------------- */
+const SHORT = { pedir: "Pedir bien", falso: "¿Real o falso?", agua: "El agua", como: "¿Cómo lo hace?",
+  errores: "Errores", personas: "¿Quién está?", cuidado: "Cuidado", privacidad: "Privacidad" };
+const WHEEL_KEYS = Object.keys(THEMES);
+const SEG = 360 / WHEEL_KEYS.length;
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// sonido (WebAudio, solo después de un toque)
+let soundOn = true, actx = null;
+try { soundOn = localStorage.getItem("pasaporte-ia-sonido") !== "no"; } catch (e) {}
+const soundBtn = document.getElementById("soundBtn");
+function paintSound() { soundBtn.setAttribute("aria-pressed", String(soundOn)); soundBtn.textContent = "Sonido: " + (soundOn ? "sí" : "no"); }
+paintSound();
+soundBtn.addEventListener("click", () => {
+  soundOn = !soundOn; paintSound();
+  try { localStorage.setItem("pasaporte-ia-sonido", soundOn ? "si" : "no"); } catch (e) {}
+});
+function audio() {
+  if (!soundOn) return null;
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+  } catch (e) { return null; }
+  return actx;
+}
+function beep(freq, dur, type, vol) {
+  const a = audio(); if (!a) return;
+  try {
+    const o = a.createOscillator(), g = a.createGain(), t = a.currentTime;
+    o.type = type || "triangle"; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(vol || 0.12, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
+  } catch (e) {}
+}
+const tick = () => beep(1400, 0.03, "square", 0.04);
+const thud = () => { beep(110, 0.18, "sine", 0.35); beep(70, 0.22, "triangle", 0.2); };
+const ding = () => { beep(880, 0.25, "sine", 0.12); setTimeout(() => beep(1320, 0.35, "sine", 0.1), 110); };
+
+// dibujo de la ruleta
+const wheelG = document.getElementById("wheelG");
+(function drawWheel() {
+  const cx = 160, cy = 160, r = 152;
+  const pt = (deg, rad) => { const a = (deg - 90) * Math.PI / 180; return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)]; };
+  let html = `<circle cx="160" cy="160" r="158" fill="#0c2a36"/>`;
+  WHEEL_KEYS.forEach((k, i) => {
+    const a0 = i * SEG, a1 = (i + 1) * SEG, [x0, y0] = pt(a0, r), [x1, y1] = pt(a1, r);
+    html += `<path d="M160 160 L${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z"
+      fill="${i % 2 ? "#174d60" : "#1f5f74"}" stroke="#d6b25e" stroke-width="2"/>`;
+    const mid = a0 + SEG / 2;
+    html += `<g transform="rotate(${mid} 160 160)"><text x="160" y="${160 - 96}" text-anchor="middle"
+      transform="rotate(90 160 ${160 - 96})" dominant-baseline="middle" fill="#f1e2b4"
+      font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="${SHORT[k].length > 12 ? 12.5 : 14}">${esc(SHORT[k])}</text></g>`;
+    const [dx, dy] = pt(a0, 140); html += `<circle cx="${dx.toFixed(2)}" cy="${dy.toFixed(2)}" r="4" fill="#d6b25e"/>`;
+  });
+  html += `<circle cx="160" cy="160" r="152" fill="none" stroke="#d6b25e" stroke-width="4"/>`;
+  wheelG.innerHTML = html;
+})();
+
+let rot = 0, spinning = false, lastSeg = null;
+const setRot = deg => { rot = deg; wheelG.style.transform = `rotate(${deg}deg)`; };
+const segAt = deg => { const top = ((-deg % 360) + 360) % 360; return Math.floor(top / SEG) % WHEEL_KEYS.length; };
+function watchTicks(until) {
+  const step = () => {
+    const m = getComputedStyle(wheelG).transform;
+    if (m && m !== "none") {
+      const v = m.match(/matrix\(([^)]+)\)/);
+      if (v) {
+        const [ma, mb] = v[1].split(",").map(Number);
+        const s = segAt(Math.atan2(mb, ma) * 180 / Math.PI);
+        if (s !== lastSeg) { lastSeg = s; tick(); }
+      }
+    }
+    if (performance.now() < until) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function spin(extraTurns) {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById("spinBtn").disabled = true;
+  audio();
+  const target = Math.floor(Math.random() * WHEEL_KEYS.length);
+  const jitter = (Math.random() - 0.5) * SEG * 0.6;
+  const want = -(target * SEG + SEG / 2) + jitter;
+  let end = rot + 360 * (extraTurns || 5);
+  end = end - (((end - want) % 360) + 360) % 360;
+  if (end <= rot + 360 * 2) end += 360;
+  const dur = reduceMotion ? 0 : 3600;
+  wheelG.style.transition = dur ? `transform ${dur}ms cubic-bezier(.12,.75,.12,1)` : "none";
+  setRot(end);
+  if (dur) watchTicks(performance.now() + dur);
+  setTimeout(() => {
+    wheelG.style.transition = "none";
+    spinning = false;
+    document.getElementById("spinBtn").disabled = false;
+    ding();
+    showDraw({ theme: WHEEL_KEYS[target] });
+  }, dur + 30);
+}
+document.getElementById("spinBtn").addEventListener("click", () => spin(5));
+
+// arrastrar la ruleta
+const wheelEl = document.getElementById("wheel");
+let drag = null;
+const angleOf = e => {
+  const b = wheelEl.getBoundingClientRect();
+  return Math.atan2(e.clientY - (b.top + b.height / 2), e.clientX - (b.left + b.width / 2)) * 180 / Math.PI;
+};
+wheelEl.addEventListener("pointerdown", e => {
+  if (spinning) return;
+  wheelEl.setPointerCapture(e.pointerId);
+  wheelEl.classList.add("dragging");
+  wheelG.style.transition = "none";
+  drag = { last: angleOf(e), t: performance.now(), v: 0, moved: 0 };
+  lastSeg = segAt(rot);
+});
+wheelEl.addEventListener("pointermove", e => {
+  if (!drag) return;
+  let a = angleOf(e), d = a - drag.last;
+  if (d > 180) d -= 360; if (d < -180) d += 360;
+  const now = performance.now(), dt = Math.max(1, now - drag.t);
+  drag.v = 0.7 * drag.v + 0.3 * (d / dt);
+  drag.last = a; drag.t = now; drag.moved += Math.abs(d);
+  setRot(rot + d);
+  const s = segAt(rot); if (s !== lastSeg) { lastSeg = s; tick(); }
+});
+const endDrag = () => {
+  if (!drag) return;
+  const v = Math.abs(drag.v), moved = drag.moved;
+  drag = null; wheelEl.classList.remove("dragging");
+  if (v > 0.25 || moved > 40) spin(Math.min(9, 3 + Math.round(v * 4)));
+};
+wheelEl.addEventListener("pointerup", endDrag);
+wheelEl.addEventListener("pointercancel", endDrag);
+
+// tarjeta con la frase
+const drawCard = document.getElementById("drawCard");
+let lastDraw = null;
+function showDraw(opt) {
+  const pool = ALL.filter(a => (!opt.theme || a.k.includes(opt.theme)) && (!opt.station || a.st.id === opt.station));
+  let pick = pool[Math.floor(Math.random() * pool.length)];
+  if (pool.length > 1 && lastDraw && pick === lastDraw) pick = pool[(pool.indexOf(pick) + 1) % pool.length];
+  lastDraw = pick;
+  const head = opt.theme ? `Tema · ${esc(THEMES[opt.theme])}` : `Estación ${pick.st.n} · ${esc(pick.st.name)}`;
+  drawCard.style.setProperty("--st", pick.st.color);
+  drawCard.innerHTML = `
+    <span class="dc-theme">${head}</span>
+    <q>${esc(pick.t)}</q>
+    <small>${esc(pick.st.name)} · ${esc(pick.q.label)}</small>
+    <div class="dc-actions">
+      <button type="button" data-again>Otra frase</button>
+      ${opt.theme ? `<button type="button" data-theme="${opt.theme}">Leer todo el tema →</button>`
+                  : `<button type="button" data-go="${pick.st.id}">Entrar a ${esc(pick.st.name)} →</button>`}
+    </div>`;
+  drawCard.querySelector("[data-again]").addEventListener("click", () => { tick(); showDraw(opt); });
+  const tb = drawCard.querySelector("[data-theme]");
+  if (tb) tb.addEventListener("click", () => { go("temas", true); showTheme(opt.theme); });
+  drawCard.classList.remove("pop"); void drawCard.offsetWidth; drawCard.classList.add("pop");
+}
+
+// sellos tocables
+const coverStamps = document.getElementById("coverStamps");
+coverStamps.innerHTML = STATIONS.map(st =>
+  `<button class="cs" type="button" data-cs="${st.id}" aria-label="Sello de ${esc(st.name)}: mostrar una frase">${stampSVG(st)}</button>`).join("");
+coverStamps.querySelectorAll(".cs").forEach(b => b.addEventListener("click", () => {
+  thud();
+  b.classList.remove("press"); void b.offsetWidth; b.classList.add("press");
+  setTimeout(() => b.classList.remove("press"), 160);
+  showDraw({ station: b.dataset.cs });
+}));
+
+// estado inicial: la ruleta quieta en "Pedir bien" y una frase real a la vista
+setRot(-SEG / 2);
+(function initial() {
+  const first = ALL.find(a => a.t === "Ser bien específico") || ALL[0];
+  lastDraw = first;
+  drawCard.style.setProperty("--st", first.st.color);
+  drawCard.innerHTML = `
+    <span class="dc-theme">Lo que más se repitió · ${esc(THEMES.pedir)}</span>
+    <q>${esc(first.t)}</q>
+    <small>${esc(first.st.name)} · ${esc(first.q.label)}</small>
+    <div class="dc-actions"><button type="button" id="firstSpin">Girar la ruleta</button></div>`;
+  document.getElementById("firstSpin").addEventListener("click", () => spin(5));
+})();
+
+/* ---------------- navegación ---------------- */
+document.getElementById("tabs").innerHTML = PAGES.map(p =>
+  `<button class="tab" type="button" data-go="${p}" data-p="${p}">${
+    STATIONS.find(s => s.id === p) ? `<span class="dot" data-st="${p}"></span>` : ""}${esc(PAGE_LABEL[p])}</button>`).join("");
+let current = null;
+function go(p, push) {
+  if (!PAGES.includes(p)) p = "tapa";
+  const first = current === null;
+  current = p;
+  document.querySelectorAll(".page").forEach(s => s.classList.toggle("active", s.dataset.page === p));
+  document.querySelectorAll(".tab").forEach(t => t.toggleAttribute("aria-current", false));
+  const tab = document.querySelector(`.tab[data-p="${p}"]`);
+  tab.setAttribute("aria-current", "page");
+  tab.scrollIntoView({ block: "nearest", inline: "nearest" });
+  const st = STATIONS.find(s => s.id === p);
+  if (st) {
+    const big = document.querySelector(`#p-${p} [data-stamp]`);
+    if (!visited.has(p)) { big.classList.remove("thump"); void big.offsetWidth; big.classList.add("thump"); }
+    visited.add(p); saveVisited();
+  }
+  renderSlots(); renderVisa();
+  const i = PAGES.indexOf(p);
+  const prev = document.getElementById("prev"), next = document.getElementById("next");
+  prev.hidden = i === 0; next.hidden = i === PAGES.length - 1;
+  if (i > 0) prev.textContent = "← " + PAGE_LABEL[PAGES[i - 1]];
+  if (i < PAGES.length - 1) next.textContent = PAGE_LABEL[PAGES[i + 1]] + " →";
+  if (push && location.hash !== "#" + p) { try { history.replaceState(null, "", "#" + p); } catch (e) { location.hash = p; } }
+  if (!first) window.scrollTo({ top: 0, behavior: "smooth" });
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-go]");
+  if (b) go(b.dataset.go, true);
+});
+document.getElementById("prev").addEventListener("click", () => go(PAGES[PAGES.indexOf(current) - 1], true));
+document.getElementById("next").addEventListener("click", () => go(PAGES[PAGES.indexOf(current) + 1], true));
+window.addEventListener("hashchange", () => go(location.hash.slice(1), false));
+go(location.hash.slice(1) || "tapa", false);
+</script>
+</body>
+</html>
